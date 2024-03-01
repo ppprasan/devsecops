@@ -27,13 +27,22 @@ pipeline {
 
           withDockerRegistry([credentialsId: "dockerhub-credential", url: ""]) {
             sh 'printenv'
-            sh 'docker build -t pprasant/devsecops:""$GIT_COMMIT"" .'
-            sh 'docker push pprasant/devsecops:""$GIT_COMMIT""'
+            sh "docker build -t pprasant/devsecops:${BUILD_ID} ."
+            sh "docker push pprasant/devsecops:${BUILD_ID}"
 
           }
 
         }
 
+      }
+
+      stage('Kubernetes Deployment - DEV') {
+        steps {
+          withKubeConfig([credentialsId: 'Kubeconfig']) {
+            sh "sed -i 's#replace#pprasant/devsecops:${BUILD_ID}#g' k8s_deployment_service.yaml"
+            sh "kubectl apply -f k8s_deployment_service.yaml"
+          }
+        }
       }
     }
 }
